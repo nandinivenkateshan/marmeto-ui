@@ -40,19 +40,19 @@ color: red;
 function App () {
   const [address, setAddress] = useState([])
   const [city, setCity] = useState('')
-  const [country, setCountry] = useState([])
-  const [states, setState] = useState([])
+  const [country, setCountry] = useState('')
+  const [state, setState] = useState('')
   const [pin, setPin] = useState('')
   const [isPin, SetIsPin] = useState(false)
   const [response, setResponse] = useState('')
+  const [values, setValues] = useState({})
 
   useEffect(() => {
     fetchPin(`https://api.postalpincode.in/pincode/${pin}`)
   }, [isPin])
 
-
-  function valuesFilter (array) {
-    return array.PostOffice.map(item => item.District).reduce((acc, cv) => {
+  function valuesFilter (array, prop) {
+    return array.PostOffice.map(item => item[prop]).reduce((acc, cv) => {
       if (acc.indexOf(cv) === -1) {
         acc.push(cv)
         return acc
@@ -69,7 +69,6 @@ function App () {
     }
 
     if (result[0].Status === 'Success') {
-     
       setResponse('')
       const address = result[0].PostOffice.map(item => {
         return `${item.Name}, ${item.Division} Division,
@@ -79,9 +78,13 @@ function App () {
          `
       })
 
-      const city = valuesFilter(result[0],)
+      const city = valuesFilter(result[0], 'District')
+      const country = valuesFilter(result[0], 'Country')
+      const state = valuesFilter(result[0], 'State')
       setCity(city[0])
       setAddress(address)
+      setCountry(country[0])
+      setState(state[0])
     }
   }
 
@@ -89,39 +92,43 @@ function App () {
     const val = e.target.value
     setPin(val)
   }
+
   function handleSearchPin () {
     SetIsPin(true)
   }
+
+  function handleValue (e) {
+    e.persist()
+    setValues(values => ({ ...values, [e.target.name]: e.target.value })
+    )
+  }
+
   return (
     <>
       <Heading>Shipping Address</Heading>
       <SubHeading>{response}</SubHeading>
       <Form>
-        <input type='text' placeholder='First Name' name='firstName' />
-        <input type='text' placeholder='Last Name' name='lastName' />
+        <input type='text' placeholder='First Name' name='firstName' onChange={handleValue} value={values.firstName} />
+        <input type='text' placeholder='Last Name' name='lastName' onChange={handleValue} value={values.lastName} />
 
         <Pin type='text' placeholder='Pin Code' name='pinCode' value={pin} onChange={handlePin} onBlur={handleSearchPin} />
 
-        <Address type='text' placeholder='Address' name='address' value={address.map(item => item)} />
+        <Address type='text' placeholder='Address' name='address' value={values.address || address.map(item => item)} onChange={handleValue} />
 
-        <Apartments type='text' placeholder='Apartments, suite, etc(Optional)' />
+        <Apartments type='text' name='apartments' value={values.apartments} placeholder='Apartments, suite, etc(Optional)' />
 
-        <City type='text' placeholder='City' value={city} />
+        <City type='text' placeholder='City' value={values.city || city} name='city' onChange={handleValue} />
 
         <select placeholder='Country/Region'>
-          <option>India</option>
-          {country.map(item => {
-            return (<option key={item}>{item}</option>)
-          })}
+          <option>Country</option>
+          <option>{country}</option>
         </select>
         <select placeholder='State'>
           <option>State</option>
-          {states.map(item => {
-            return (<option key={item}>{item}</option>)
-          })}
+          <option>{state}</option>
         </select>
 
-        <Phone type='text' placeholder='Phone number' />
+        <Phone type='text' placeholder='Phone number' name='phone' value={values.phone} />
 
       </Form>
     </>
